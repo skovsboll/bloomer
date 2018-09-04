@@ -43,6 +43,24 @@ def test_marshal_state(b)
   inputs.each { |ea| new_b.must_include(ea) }
 end
 
+def test_serialize_and_deserialize(b)
+  require 'yaml'
+  require "json"
+  inputs = b.capacity.times.collect { rand_word }
+  inputs.each { |ea| b.add(ea) }
+  
+  text = b.to_h.to_json
+  data = JSON.parse(text)
+
+  text = b.to_h.to_yaml
+  data = YAML.load(text)
+
+  new_b = Bloomer.from_h(data)
+  new_b.count.must_equal b.count
+  new_b.capacity.must_equal b.capacity
+  inputs.each { |ea| new_b.must_include(ea) }
+end
+
 def test_simple(b)
   b.add("a").must_equal true
   b.add("a").must_equal false
@@ -68,6 +86,11 @@ describe Bloomer do
     test_marshal_state(b)
   end
 
+  it "serializes and deserializes correctly" do
+    b = Bloomer.new(10, 0.001)
+    test_serialize_and_deserialize(b)
+  end
+
   it "results in similar-to-expected false positives" do
     max_false_prob = 0.001
     size = 50_000
@@ -86,6 +109,12 @@ describe Bloomer::Scalable do
     b = Bloomer::Scalable.new(10, 0.001)
     100.times.each { b.add(rand_word) }
     test_marshal_state(b)
+  end
+
+  it "serializes and deserializes correctly" do
+    b = Bloomer::Scalable.new(10, 0.001)
+    100.times.each { b.add(rand_word) }
+    test_serialize_and_deserialize(b)
   end
 
   it "results in similar-to-expected false positives" do
